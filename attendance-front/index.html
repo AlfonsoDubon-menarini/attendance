@@ -53,20 +53,55 @@
         try {
             const response = await fetch(API_URL);
             const data = await response.json();
+
+            // ORDEN: Invertimos el array para que lo más nuevo salga ARRIBA
+            const sortedData = data.reverse();
+
             const tbody = document.getElementById('historyBody');
-            tbody.innerHTML = data.map(record => `
-                    <tr>
-                        <td>${record.employeeId}</td>
-                        <td>${record.locationId}</td>
-                        <td>${new Date(record.checkInTime).toLocaleString()}</td>
-                        <td><span class="status status-active">${record.status}</span></td>
-                        <td>
-                            ${record.status === 'ACTIVE' || record.status === 'PRESENT' ? 
-                                `<button class="btn-checkout" onclick="checkOut('${record.id}')">Check-out</button>` : ''}
-                        </td>
-                    </tr>
-                `).join('');
-        } catch (err) { alert('Error al conectar con la API'); }
+            tbody.innerHTML = sortedData.map(record => `
+            <tr>
+                <td>${record.employeeId}</td>
+                <td>${record.locationId}</td>
+                <td>${new Date(record.checkInTime).toLocaleString()}</td>
+                <td>
+                    <span class="status ${record.status === 'ACTIVE' ? 'status-active' : 'status-completed'}">
+                        ${record.status}
+                    </span>
+                </td>
+                <td>
+                    ${record.status === 'ACTIVE' ?
+                `<button class="btn-checkout" onclick="checkOut('${record.id}')">Salida</button>` :
+                `<span class="text-muted">Finalizado</span>`}
+                </td>
+            </tr>
+        `).join('');
+        } catch (err) {
+            console.error('Error:', err);
+        }
+    }
+
+    async function checkIn() {
+        const empInput = document.getElementById('empId');
+        const locInput = document.getElementById('locId');
+
+        const body = {
+            employeeId: empInput.value,
+            locationId: locInput.value,
+            checkInTime: new Date().toISOString()
+        };
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if(response.ok) {
+            // LIMPIEZA: Borramos los campos tras el éxito
+            empInput.value = '';
+            locInput.value = '';
+            loadHistory();
+        }
     }
 
     async function checkIn() {
@@ -84,20 +119,12 @@
     }
 
     async function checkOut(id) {
-        try {
-            const response = await fetch(`${API_URL}/${id}/checkout`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(new Date().toISOString())
-            });
-            if (response.ok) {
-                loadHistory();
-            } else {
-                alert('Error al realizar check-out');
-            }
-        } catch (err) {
-            alert('Error al conectar con la API');
-        }
+        if(!confirm('¿Confirmar salida?')) return;
+
+        await fetch(`${API_URL}/${id}/checkout`, {
+            method: 'PATCH'
+        });
+        loadHistory();
     }
 
     loadHistory();
