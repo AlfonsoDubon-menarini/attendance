@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-attendance
+  threads:
+    virtual:
+      enabled: true # Activamos hilos virtuales para máximo rendimiento
+
+# Configuración de la API Gateway (adaptador de salida)
+app:
+  gateway:
+    base-url: "https://api.gateway.tudominio.com/v1"
+
+# Configuración de Swagger / OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
